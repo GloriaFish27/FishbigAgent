@@ -139,12 +139,56 @@ cron.schedule('0 8 * * *', async () => {
     }
 }, { timezone: 'Asia/Bangkok' });
 
+// ── Scheduled Task Runner (check every 1 minute) ──
+const SCHEDULE_PATH = path.join(DATA_DIR, 'scheduled-tasks.json');
+setInterval(async () => {
+    try {
+        if (!fs.existsSync(SCHEDULE_PATH)) return;
+        const tasks = JSON.parse(fs.readFileSync(SCHEDULE_PATH, 'utf-8'));
+        const now = new Date();
+        let updated = false;
+
+        for (const task of tasks) {
+            if (task.status !== 'pending') continue;
+            if (new Date(task.executeAt) > now) continue;
+
+            // Task is due — execute it
+            console.log(`[SCHEDULE] ⏰ Running scheduled task: "${task.description}"`);
+            task.status = 'running';
+            updated = true;
+
+            try {
+                // Send the task action to the reply engine as a user message
+                const chatId = MAIN_CHAT_ID;
+                if (chatId) {
+                    const msg = `[定时任务] ${task.description}\n${task.action}`;
+                    replyEngine.enqueue(chatId, msg);
+                    task.status = 'completed';
+                    task.completedAt = new Date().toISOString();
+                    console.log(`[SCHEDULE] ✅ Task sent: "${task.description}"`);
+                } else {
+                    task.status = 'failed';
+                    task.error = 'No FEISHU_CHAT_ID configured';
+                }
+            } catch (e: any) {
+                task.status = 'failed';
+                task.error = e.message;
+                console.error(`[SCHEDULE] ❌ Task failed: ${e.message}`);
+            }
+        }
+
+        if (updated) {
+            fs.writeFileSync(SCHEDULE_PATH, JSON.stringify(tasks, null, 2));
+        }
+    } catch { }
+}, 60_000); // Check every 1 minute
+
 console.log('');
 console.log('🐟 FishbigAgent is running!');
 console.log(`   🧠 Brain: ReplyEngine + SOUL`);
 console.log(`   💓 Heartbeat: every 30min`);
 console.log(`   📰 Daily briefing: 08:00 → AI/Agent/OpenClaw → 飞书文档`);
+console.log(`   ⏰ Scheduled tasks: checking every 1min`);
 console.log(`   🦞 Moltbook: ${MOLTBOOK_API_KEY ? '✅ Connected' : '❌ No API key'}`);
 console.log(`   💰 Survival: ${checkResources(db).tier.toUpperCase()}`);
 console.log('');
-

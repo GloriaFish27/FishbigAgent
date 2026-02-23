@@ -135,12 +135,25 @@ export class ToolExecutor {
             '',
             '**推荐工作流：** goto → analyze（查看元素列表）→ 用 elementId 或 target 操作',
             '',
+            '### schedule_task — 定时任务（延迟执行）',
+            '⚠️ **重要：当用户要求"每隔 X 分钟做一次"或"N 分钟后做"时，必须用这个工具！不要在循环里连续做！**',
+            '```',
+            '# 30 分钟后发一条推文',
+            '<tool_call>{"tool":"schedule_task","args":{"delay_minutes":"30","description":"发第二条推文","action":"browser操作：打开x.com发推"}}</tool_call>',
+            '',
+            '# 每隔 30 分钟发一条，共 5 条',
+            '<tool_call>{"tool":"schedule_task","args":{"delay_minutes":"30","description":"发第2条推文","action":"推文内容..."}}</tool_call>',
+            '<tool_call>{"tool":"schedule_task","args":{"delay_minutes":"60","description":"发第3条推文","action":"推文内容..."}}</tool_call>',
+            '<tool_call>{"tool":"schedule_task","args":{"delay_minutes":"90","description":"发第4条推文","action":"推文内容..."}}</tool_call>',
+            '```',
+            '',
             '**规则：**',
             '- 每次回复可以包含多个 tool_call',
             '- 工具执行后结果会返回给你，你可以继续使用工具',
             '- 当任务完成时，直接用文字回复最终结果（不要再加 tool_call）',
             '- shell 命令 30 秒超时',
             '- 禁止执行破坏性命令（rm -rf /, sudo rm 等）',
+            '- **当需要延迟、间隔、定时执行时，必须用 schedule_task，不要自己在循环里等待**',
             `- 当前工作目录: ${PROJECT_ROOT}`,
         ].join('\n');
     }
@@ -163,12 +176,49 @@ export class ToolExecutor {
                 return this.github(call.args);
             case 'browser':
                 return this.browser.execute(call.args);
+            case 'schedule_task':
+                return this.scheduleTask(call.args);
             default:
                 return { success: false, output: `Unknown tool: ${call.tool}` };
         }
     }
 
-    // ── Shell ──────────────────────────────────────────────────
+    // ── Schedule Task ─────────────────────────────────────────────
+    private scheduleTask(args: Record<string, string>): ToolResult {
+        const delayMinutes = parseInt(args.delay_minutes ?? '0', 10);
+        const description = args.description ?? '';
+        const action = args.action ?? '';
+
+        if (delayMinutes <= 0) {
+            return { success: false, output: '❌ delay_minutes must be > 0' };
+        }
+        if (!description && !action) {
+            return { success: false, output: '❌ description or action required' };
+        }
+
+        const schedulePath = path.join(this.cwd, 'data', 'scheduled-tasks.json');
+        let tasks: any[] = [];
+        try { tasks = JSON.parse(fs.readFileSync(schedulePath, 'utf-8')); } catch { }
+
+        const executeAt = new Date(Date.now() + delayMinutes * 60_000).toISOString();
+        const task = {
+            id: `task-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            description,
+            action,
+            scheduledAt: new Date().toISOString(),
+            executeAt,
+            status: 'pending',
+        };
+        tasks.push(task);
+        fs.mkdirSync(path.dirname(schedulePath), { recursive: true });
+        fs.writeFileSync(schedulePath, JSON.stringify(tasks, null, 2));
+
+        console.log(`[SCHEDULE] ✅ Task scheduled: "${description}" at ${executeAt}`);
+        return {
+            success: true,
+            output: `✅ 已安排定时任务:\n- 任务: ${description}\n- 执行时间: ${executeAt} (${delayMinutes} 分钟后)\n- ID: ${task.id}`,
+        };
+    }
 
     private shell(cmd: string): ToolResult {
         if (!cmd.trim()) return { success: false, output: 'Empty command' };

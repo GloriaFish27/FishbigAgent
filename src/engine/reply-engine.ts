@@ -46,7 +46,9 @@ export class ReplyEngine {
     private dataDir: string;
     private sendFn: SendFn;
     private pending = new Map<string, PendingBatch>();
-    private processing = new Set<string>(); // prevent overlapping cycles
+    private processing = new Set<string>();
+    /** Messages that arrive while a task is being processed — checked mid-loop */
+    private interruptQueue = new Map<string, string[]>(); // prevent overlapping cycles
     private debounceMs: number;
     private skills: Skill[] = [];
     private memory: MemoryManager;
@@ -78,6 +80,15 @@ export class ReplyEngine {
      * Enqueue a message from Feishu. Debounced per chatId.
      */
     enqueue(chatId: string, text: string): void {
+        // If a task is currently being processed for this chat, add to interrupt queue
+        if (this.processing.has(chatId)) {
+            const queue = this.interruptQueue.get(chatId) ?? [];
+            queue.push(text);
+            this.interruptQueue.set(chatId, queue);
+            console.log(`[INTERRUPT] 📨 Message queued for mid-task injection: "${text.slice(0, 50)}"`);
+            return;
+        }
+
         const existing = this.pending.get(chatId);
         if (existing) {
             existing.texts.push(text);
@@ -255,8 +266,22 @@ export class ReplyEngine {
         ];
 
         let finalResult = '';
+        let interrupted = false;
         for (let i = 0; i < MAX_ITERATIONS; i++) {
             console.log(`[ACT] Iteration ${i + 1}/${MAX_ITERATIONS}`);
+
+            // ── Check for user interrupts ──
+            const interrupts = this.interruptQueue.get(chatId);
+            if (interrupts && interrupts.length > 0) {
+                const userMsg = interrupts.join('\n');
+                this.interruptQueue.delete(chatId);
+                console.log(`[INTERRUPT] ⚡ User interrupt detected: "${userMsg.slice(0, 80)}"`);
+                await this.sendFn(chatId, `⚡ 收到你的消息，正在调整...`);
+                actMessages.push({
+                    role: 'user',
+                    text: `⚠️ 【用户中途消息】用户刚刚发来了新指令：\n"${userMsg}"\n\n你必须立刻回应用户的新指令。如果用户要求停止、修改或调整计划，你必须遵从。`,
+                });
+            }
 
             // Trim context if too large — compress older tool iterations
             this._trimActContext(actMessages, MAX_CONTEXT_CHARS);
