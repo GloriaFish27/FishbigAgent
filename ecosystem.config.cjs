@@ -11,6 +11,7 @@ module.exports = {
         watch: false,
         env: {
             NODE_ENV: 'production',
+            FEISHU_CHAT_ID: '',  // Fill with your Feishu group chat ID
         },
         error_file: 'logs/error.log',
         out_file: 'logs/out.log',

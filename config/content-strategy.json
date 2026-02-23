@@ -1,0 +1,86 @@
+{
+    "persona": {
+        "name": "鱼大",
+        "account_name": "鱼大跨境AI教练",
+        "identity": "40岁三娃妈妈，前CIO，Temu 30店创业者，AI Coding实战者",
+        "core_belief": "AI不是让你成为程序员，而是放大你原本的职业优势",
+        "positioning": "刚过河的人——不是大牛，但知道哪里水深",
+        "differentiator": "技术管理者视角做跨境+AI，不是纯技术也不是纯电商",
+        "tone": "真实踩坑 + 框架SOP + 数据驱动 + 接地气"
+    },
+    "audience": {
+        "description": "想学AI+跨境，学会怎么赚钱的人",
+        "segments": [
+            "创业者/副业者，想用AI提效",
+            "产品经理/非技术人，想用AI Coding做产品",
+            "跨境卖家，想用AI自动化运营"
+        ]
+    },
+    "pillars": [
+        {
+            "id": "ai_cross_border",
+            "name": "AI x 跨境实战",
+            "xhs_pct": 35,
+            "wechat_pct": 25
+        },
+        {
+            "id": "money_method",
+            "name": "赚钱方法论",
+            "xhs_pct": 25,
+            "wechat_pct": 30
+        },
+        {
+            "id": "ai_coding",
+            "name": "AI Coding 教学",
+            "xhs_pct": 20,
+            "wechat_pct": 20
+        },
+        {
+            "id": "trend_analysis",
+            "name": "趋势解读+案例拆解",
+            "xhs_pct": 10,
+            "wechat_pct": 20
+        },
+        {
+            "id": "personal_growth",
+            "name": "个人成长/创业生活",
+            "xhs_pct": 10,
+            "wechat_pct": 5
+        }
+    ],
+    "xiaohongshu": {
+        "style": "情绪化钩子",
+        "title_patterns": [
+            "后悔没早用！{内容} 🔥",
+            "救命！{痛点}，这{数字}个方法绝了",
+            "从亏{数字}万到月入{数字}万，我只改了这1步",
+            "Temu卖家必看！{工具/方法}让效率翻{数字}倍",
+            "{数字}个AI工具让我{动词}，第{序号}个绝了",
+            "做了{时间}跨境，终于悟出来{道理}",
+            "别再{错误做法}了！试试这个AI{方法}"
+        ],
+        "tags_pool": [
+            "#AI工具",
+            "#跨境电商",
+            "#Temu",
+            "#AI选品",
+            "#独立站",
+            "#AI创业",
+            "#跨境卖家",
+            "#AI教程",
+            "#副业",
+            "#赚钱"
+        ]
+    },
+    "wechat": {
+        "style": "深度分析",
+        "title_patterns": [
+            "深度拆解：{主题}",
+            "AI Agent时代，{观点}",
+            "从{起点}到{终点}：{方法论}全公开",
+            "为什么90%的{群体}都{错误}？",
+            "{趋势}正在重构{领域}，你准备好了吗？",
+            "{案例}背后的{数字}条底层逻辑"
+        ]
+    }
+}

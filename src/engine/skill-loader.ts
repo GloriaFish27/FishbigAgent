@@ -10,6 +10,7 @@ export interface Skill {
     description: string;
     instructions: string;
     dir: string;
+    hasScripts: boolean;  // true if skill has scripts/ directory
 }
 
 export class SkillLoader {
@@ -55,6 +56,7 @@ export class SkillLoader {
                 description: '',
                 instructions: content.trim(),
                 dir,
+                hasScripts: fs.existsSync(path.join(dir, 'scripts')),
             };
         }
 
@@ -72,21 +74,28 @@ export class SkillLoader {
             description: meta.description ?? '',
             instructions: body.replace(/\{baseDir\}/g, dir),
             dir,
+            hasScripts: fs.existsSync(path.join(dir, 'scripts')),
         };
     }
 
-    /** Build prompt section for all loaded skills */
+    /** Build compact prompt — only names and descriptions (not full instructions) */
     static buildPrompt(skills: Skill[]): string {
         if (skills.length === 0) return '';
 
         const parts = ['## 可用 Skills\n'];
+        parts.push('使用 skill 时先用 read_file 读取完整 SKILL.md，然后按指令执行。\n');
+
         for (const skill of skills) {
-            parts.push(`### /${skill.name}`);
-            if (skill.description) parts.push(skill.description);
-            parts.push('');
-            parts.push(skill.instructions.slice(0, 1500));
-            parts.push('');
+            const scripts = skill.hasScripts ? '📦 有 scripts/' : '📝 纯指令';
+            parts.push(`- **${skill.name}** [${scripts}]: ${skill.description || '(no description)'}`);
+            parts.push(`  目录: ${skill.dir}`);
         }
         return parts.join('\n');
+    }
+
+    /** Get full instructions for a specific skill (on-demand) */
+    static getInstructions(skills: Skill[], name: string): string | null {
+        const skill = skills.find(s => s.name === name);
+        return skill?.instructions ?? null;
     }
 }

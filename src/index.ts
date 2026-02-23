@@ -3,21 +3,41 @@
  *
  * Bridge: Feishu ↔ file IPC
  * Brain:  inbox watcher → ReplyEngine (Cloud Code API) → outbox → Feishu
+ * Eyes:   Market Intelligence (Reddit + Moltbook + X.com)
+ * Wallet: SpendTracker + Survival monitoring
  */
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import cron from 'node-cron';
 import { IPC } from './bridge/ipc.js';
-// History is now managed solely by ReplyEngine's Conversation module
 import { FeishuBridge } from './channels/feishu.js';
 import { ReplyEngine } from './engine/reply-engine.js';
 import { Heartbeat } from './engine/heartbeat.js';
 import { GoogleAuth } from './auth/google-auth.js';
+import { AgentDatabase } from './state/database.js';
+import { MarketIntelligenceEngine } from './engine/market-intelligence.js';
+import { checkResources, formatResourceReport } from './engine/survival.js';
+import { loadSoul } from './engine/soul.js';
 import config from '../config/config.json' with { type: 'json' };
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const DATA_DIR = path.join(PROJECT_ROOT, 'data');
+
+// ── Database + Soul ──────────────────────────────────────────
+const db = new AgentDatabase(DATA_DIR);
+const soul = loadSoul(DATA_DIR);
+
+// ── Moltbook API Key ─────────────────────────────────────────
+const MOLTBOOK_API_KEY = (() => {
+    try {
+        const creds = JSON.parse(fs.readFileSync(
+            path.join(process.env.HOME || '~', '.config/moltbook/credentials.json'), 'utf-8'
+        ));
+        return creds.api_key || '';
+    } catch { return ''; }
+})();
 
 // ── Auth ──────────────────────────────────────────────────
 const auth = new GoogleAuth(DATA_DIR);
@@ -25,7 +45,7 @@ const hasCredentials = auth.load();
 
 // ── Core modules ──────────────────────────────────────────
 const ipc = new IPC(DATA_DIR);
-const feishu = new FeishuBridge(config.feishu, ipc);
+const feishu = new FeishuBridge(config.feishu, ipc, DATA_DIR);
 
 // ── Brain (ReplyEngine) ───────────────────────────────────
 const replyEngine = new ReplyEngine({
@@ -37,14 +57,14 @@ const replyEngine = new ReplyEngine({
     },
 });
 
+// ── Market Intelligence Engine ────────────────────────────
+const marketEngine = new MarketIntelligenceEngine(db, MOLTBOOK_API_KEY || undefined);
+
 // ── Soul summary ──────────────────────────────────────────
 function logSoulSummary(): void {
-    try {
-        const soul = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'soul.json'), 'utf-8')) as {
-            name?: string; cycle?: number; goals?: string[];
-        };
-        console.log(`[SOUL] ${soul.name} | Cycle ${soul.cycle}`);
-    } catch { /* ignore */ }
+    console.log(`[SOUL] ${soul.name} | Purpose: ${soul.corePurpose.slice(0, 60)}`);
+    const status = checkResources(db);
+    console.log(`[SURVIVAL] ${formatResourceReport(status).split('\n').slice(1, 3).join(' | ')}`);
 }
 
 // ── Inbox Watcher (Brain Daemon) ──────────────────────────
@@ -75,6 +95,7 @@ process.on('SIGINT', () => {
     if (inboxPollTimer) clearInterval(inboxPollTimer);
     heartbeat.stop();
     feishu.disconnect();
+    db.close();
     process.exit(0);
 });
 
@@ -96,7 +117,7 @@ await feishu.connect();
 startInboxWatcher();
 
 // ── Heartbeat (proactive timer) ──────────────────────────
-const MAIN_CHAT_ID = 'oc_6baf1768f0cbdaf841027e2b547851f8';
+const MAIN_CHAT_ID = process.env.FEISHU_CHAT_ID || '';
 const heartbeat = new Heartbeat({
     engine: replyEngine,
     chatId: MAIN_CHAT_ID,
@@ -105,7 +126,25 @@ const heartbeat = new Heartbeat({
 });
 heartbeat.start();
 
+// ── Daily AI Briefing Cron (every morning 08:00 Asia/Bangkok) ──
+cron.schedule('0 8 * * *', async () => {
+    console.log('[BRIEFING] 📰 Running daily AI/Agent briefing...');
+    try {
+        const { generateDailyBriefing } = await import('./engine/daily-briefing.js');
+        const docUrl = await generateDailyBriefing(MAIN_CHAT_ID);
+        console.log(`[BRIEFING] ✅ Sent: ${docUrl}`);
+    } catch (e: any) {
+        console.error('[BRIEFING] Error:', e.message);
+        ipc.writeOutbox({ chatId: MAIN_CHAT_ID, text: `❌ 每日简报生成失败: ${e.message}` });
+    }
+}, { timezone: 'Asia/Bangkok' });
+
 console.log('');
-console.log('🐟 FishbigBridge + Brain is running!');
-console.log(`   💓 Heartbeat: every 30min → ${MAIN_CHAT_ID}`);
+console.log('🐟 FishbigAgent is running!');
+console.log(`   🧠 Brain: ReplyEngine + SOUL`);
+console.log(`   💓 Heartbeat: every 30min`);
+console.log(`   📰 Daily briefing: 08:00 → AI/Agent/OpenClaw → 飞书文档`);
+console.log(`   🦞 Moltbook: ${MOLTBOOK_API_KEY ? '✅ Connected' : '❌ No API key'}`);
+console.log(`   💰 Survival: ${checkResources(db).tier.toUpperCase()}`);
 console.log('');
+

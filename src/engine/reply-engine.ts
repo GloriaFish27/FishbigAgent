@@ -278,6 +278,7 @@ export class ReplyEngine {
 
             // Execute each tool call, truncate individual results
             const toolResults: string[] = [];
+            const collectedImages: string[] = [];
             for (const call of toolCalls) {
                 console.log(`[TOOL] ${call.tool}: ${JSON.stringify(call.args).slice(0, 100)}`);
                 const result = await tools.execute(call);
@@ -287,6 +288,11 @@ export class ReplyEngine {
                     : result.output;
                 toolResults.push(`[${call.tool}] ${status}\n${output}`);
                 console.log(`[TOOL] ${status} ${result.output.slice(0, 100)}`);
+                // Collect images from tools (e.g. browser screenshot)
+                if (result.images?.length) {
+                    collectedImages.push(...result.images);
+                    console.log(`[TOOL] 📷 Collected ${result.images.length} image(s) for Vision`);
+                }
             }
 
             // Track tool usage for progress
@@ -300,11 +306,12 @@ export class ReplyEngine {
                 await this.sendFn(chatId, `⚙️ [${i}/${MAX_ITERATIONS}] ${summary}`);
             }
 
-            // Feed results back to LLM
+            // Feed results back to LLM (with images if any)
             actMessages.push({ role: 'model', text: response });
             actMessages.push({
                 role: 'user',
                 text: `工具执行结果：\n\n${toolResults.join('\n\n')}\n\n继续执行下一步，或者如果任务完成了就直接回复最终结果。`,
+                images: collectedImages.length > 0 ? collectedImages : undefined,
             });
         }
 

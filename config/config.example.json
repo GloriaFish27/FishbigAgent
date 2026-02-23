@@ -1,0 +1,19 @@
+{
+    "feishu": {
+        "appId": "YOUR_FEISHU_APP_ID",
+        "appSecret": "YOUR_FEISHU_APP_SECRET"
+    },
+    "notion": {
+        "token": "ntn_YOUR_NOTION_TOKEN",
+        "briefingDbId": "",
+        "topicDbId": "",
+        "materialDbId": ""
+    },
+    "gcpProjectId": "YOUR_GCP_PROJECT_ID",
+    "workspacePath": "./workspace",
+    "defaultModel": "gemini-2.0-flash",
+    "heartbeatMinutes": 120,
+    "cron": {
+        "morningSchedule": "0 8 * * *"
+    }
+}

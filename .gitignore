@@ -2,8 +2,11 @@ node_modules/
 dist/
 *.js.map
 
-# Credentials
+# Credentials & secrets
 data/auth.json
+data/x-cookies.json
+config/config.json
+config/tavily.json
 
 # Runtime data (not source)
 data/inbox/
@@ -12,6 +15,20 @@ data/history/
 data/compaction/
 data/.xhs-auth/
 data/memory/
+data/state.db*
+data/seen-msg-ids.json
+data/fishbig-soul.json
+data/memory.json
+data/soul.json
+data/constitution.json
+data/reddit-drafts*.md
+data/temu-xhs-data.json
+data/shared-memory/
+data/*.png
+config/data/
+
+# Test scripts (may contain hardcoded values)
+src/scripts/
 
 # PM2 logs
 logs/
@@ -24,3 +41,4 @@ complete
 
 # OS
 .DS_Store
+skills/*/scripts/node_modules

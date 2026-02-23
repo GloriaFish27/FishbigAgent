@@ -1,0 +1,186 @@
+{
+    "reddit": {
+        "core_subreddits": [
+            "AI_Agents",
+            "LLMDevs",
+            "LocalLLaMA",
+            "MachineLearning",
+            "SaaS",
+            "ecommerce"
+        ],
+        "scan_mode": {
+            "AI_Agents": "new",
+            "LLMDevs": "new",
+            "LocalLLaMA": "hot",
+            "MachineLearning": "hot",
+            "SaaS": "new",
+            "ecommerce": "hot"
+        }
+    },
+    "xcom": {
+        "focus_accounts": [
+            {
+                "handle": "AndrewYNg",
+                "name": "Andrew Ng",
+                "category": "ai_leader"
+            },
+            {
+                "handle": "kaboroevich",
+                "name": "Andrej Karpathy",
+                "category": "ai_leader"
+            },
+            {
+                "handle": "ylecun",
+                "name": "Yann LeCun",
+                "category": "ai_leader"
+            },
+            {
+                "handle": "demishassabis",
+                "name": "Demis Hassabis",
+                "category": "ai_leader"
+            },
+            {
+                "handle": "bindureddy",
+                "name": "Bindu Reddy",
+                "category": "ai_leader"
+            },
+            {
+                "handle": "emaborevich",
+                "name": "Emad Mostaque",
+                "category": "ai_leader"
+            },
+            {
+                "handle": "levelsio",
+                "name": "Pieter Levels",
+                "category": "saas_builder"
+            },
+            {
+                "handle": "marclouveaux",
+                "name": "Marc Lou",
+                "category": "saas_builder"
+            },
+            {
+                "handle": "jasonlk",
+                "name": "Jason Lemkin",
+                "category": "saas_builder"
+            },
+            {
+                "handle": "hnshah",
+                "name": "Hiten Shah",
+                "category": "saas_builder"
+            },
+            {
+                "handle": "yaboroborsky",
+                "name": "Greg Isenberg",
+                "category": "saas_builder"
+            },
+            {
+                "handle": "tolokonnikova",
+                "name": "Tobi Lütke",
+                "category": "saas_builder"
+            },
+            {
+                "handle": "dotey",
+                "name": "宝玉",
+                "category": "cn_blogger"
+            },
+            {
+                "handle": "vikingmute",
+                "name": "张轩",
+                "category": "cn_blogger"
+            },
+            {
+                "handle": "Barret_China",
+                "name": "小胡子哥",
+                "category": "cn_blogger"
+            },
+            {
+                "handle": "yaboroborev",
+                "name": "歸藏",
+                "category": "cn_blogger"
+            },
+            {
+                "handle": "op7418",
+                "name": "HiTw",
+                "category": "cn_blogger"
+            },
+            {
+                "handle": "balconychy",
+                "name": "阳台",
+                "category": "cn_blogger"
+            }
+        ]
+    },
+    "keywords": {
+        "en": {
+            "core": [
+                "ai agent",
+                "agentic ai",
+                "autonomous agent",
+                "agent framework"
+            ],
+            "products": [
+                "openclaw",
+                "langchain",
+                "crewai",
+                "autogen",
+                "n8n",
+                "openai",
+                "anthropic",
+                "claude",
+                "gemini",
+                "llama"
+            ],
+            "business": [
+                "ai startup",
+                "ai revenue",
+                "ai saas",
+                "vibe coding",
+                "built with ai",
+                "side project",
+                "bootstrapped"
+            ],
+            "ecommerce": [
+                "ai ecommerce",
+                "shopify ai",
+                "temu",
+                "cross-border",
+                "dropshipping ai"
+            ],
+            "engineering": [
+                "browser automation",
+                "web scraping",
+                "data pipeline",
+                "prompt engineering",
+                "rag",
+                "fine-tuning"
+            ]
+        },
+        "cn": {
+            "core": [
+                "AI智能体",
+                "大模型",
+                "Agent",
+                "自动化"
+            ],
+            "products": [
+                "独立开发",
+                "出海",
+                "SaaS",
+                "开源"
+            ],
+            "ecommerce": [
+                "跨境电商",
+                "Temu",
+                "小红书",
+                "亚马逊"
+            ],
+            "engineering": [
+                "提示词",
+                "RAG",
+                "微调",
+                "部署"
+            ]
+        }
+    }
+}

@@ -19,6 +19,8 @@ const ANTIGRAVITY_VERSION = '1.15.8';
 export interface ChatMessage {
     role: 'user' | 'model';
     text: string;
+    /** Optional base64-encoded images for multimodal input */
+    images?: string[];
 }
 
 /** Model routing table — verified available */
@@ -72,14 +74,28 @@ export class AntigravityAPI {
         const project = this.auth.companionProject;
         if (!project) throw new Error('No companion project. Run: npm run login');
 
-        const contents = messages.map(m => ({
-            role: m.role === 'model' ? 'model' : 'user',
-            parts: [{ text: m.text }],
-        }));
+        const contents = messages.map(m => {
+            const parts: Array<Record<string, unknown>> = [{ text: m.text }];
+            // Add image parts for multimodal messages
+            if (m.images?.length) {
+                for (const img of m.images) {
+                    parts.push({
+                        inline_data: {
+                            mime_type: 'image/png',
+                            data: img,
+                        },
+                    });
+                }
+            }
+            return {
+                role: m.role === 'model' ? 'model' : 'user',
+                parts,
+            };
+        });
 
         const innerRequest: Record<string, unknown> = {
             contents,
-            generationConfig: { maxOutputTokens: 4096 },
+            generationConfig: { maxOutputTokens: 8192 },
         };
         if (systemPrompt) {
             innerRequest['systemInstruction'] = { role: 'user', parts: [{ text: systemPrompt }] };
