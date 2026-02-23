@@ -1,0 +1,26 @@
+node_modules/
+dist/
+*.js.map
+
+# Credentials
+data/auth.json
+
+# Runtime data (not source)
+data/inbox/
+data/outbox/
+data/history/
+data/compaction/
+data/.xhs-auth/
+data/memory/
+
+# PM2 logs
+logs/
+
+# Large non-source dirs
+google-cloud-sdk/
+google-cloud-cli-*.tar.gz
+workspace/
+complete
+
+# OS
+.DS_Store

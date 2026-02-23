@@ -1,0 +1,538 @@
+{
+  "identity": {
+    "name": "FishbigAgent",
+    "purpose": "An autonomous AI agent serving the user through Feishu and local tools.",
+    "creator": "cli_a9f0fa42fa78dbc9"
+  },
+  "state": {
+    "cycle": 40,
+    "survivalLevel": "ACTIVE",
+    "currentModel": "gemini"
+  },
+  "memory": [
+    {
+      "cycle": 0,
+      "time": "2026-02-22T10:21:01.256Z",
+      "event": "Feishu WSClient connecting"
+    },
+    {
+      "cycle": 1,
+      "time": "2026-02-22T10:21:51.012Z",
+      "event": "Woke up for cycle 1"
+    },
+    {
+      "cycle": 2,
+      "time": "2026-02-22T10:22:09.230Z",
+      "event": "Woke up for cycle 2"
+    },
+    {
+      "cycle": 3,
+      "time": "2026-02-22T10:23:48.312Z",
+      "event": "Woke up for cycle 3"
+    },
+    {
+      "cycle": 4,
+      "time": "2026-02-22T10:24:06.731Z",
+      "event": "Woke up for cycle 4"
+    },
+    {
+      "cycle": 4,
+      "time": "2026-02-22T10:29:26.544Z",
+      "event": "Feishu WSClient connecting"
+    },
+    {
+      "cycle": 5,
+      "time": "2026-02-22T10:34:21.730Z",
+      "event": "Woke up for cycle 5"
+    },
+    {
+      "cycle": 6,
+      "time": "2026-02-22T10:34:41.133Z",
+      "event": "Woke up for cycle 6"
+    },
+    {
+      "cycle": 7,
+      "time": "2026-02-22T10:39:45.887Z",
+      "event": "Woke up for cycle 7"
+    },
+    {
+      "cycle": 7,
+      "time": "2026-02-22T11:11:09.730Z",
+      "event": "Feishu WSClient connecting"
+    },
+    {
+      "cycle": 8,
+      "time": "2026-02-22T11:12:39.774Z",
+      "event": "Woke up for cycle 8"
+    },
+    {
+      "cycle": 9,
+      "time": "2026-02-22T11:12:55.988Z",
+      "event": "Woke up for cycle 9"
+    },
+    {
+      "cycle": 10,
+      "time": "2026-02-22T11:13:32.991Z",
+      "event": "Woke up for cycle 10"
+    },
+    {
+      "cycle": 11,
+      "time": "2026-02-22T11:13:53.037Z",
+      "event": "Woke up for cycle 11"
+    },
+    {
+      "cycle": 11,
+      "time": "2026-02-22T11:17:54.718Z",
+      "event": "Feishu WSClient connecting"
+    },
+    {
+      "cycle": 12,
+      "time": "2026-02-22T11:19:03.014Z",
+      "event": "Woke up for cycle 12"
+    },
+    {
+      "cycle": 13,
+      "time": "2026-02-22T11:20:04.708Z",
+      "event": "Woke up for cycle 13"
+    },
+    {
+      "cycle": 13,
+      "time": "2026-02-22T11:20:09.172Z",
+      "event": "Cycle 13 tool results: [list_files] ✅ "
+    },
+    {
+      "cycle": 14,
+      "time": "2026-02-22T11:20:24.085Z",
+      "event": "Woke up for cycle 14"
+    },
+    {
+      "cycle": 14,
+      "time": "2026-02-22T11:23:36.119Z",
+      "event": "Feishu WSClient connecting"
+    },
+    {
+      "cycle": 15,
+      "time": "2026-02-22T11:25:28.721Z",
+      "event": "Woke up for cycle 15"
+    },
+    {
+      "cycle": 16,
+      "time": "2026-02-22T11:39:49.943Z",
+      "event": "Woke up for cycle 16"
+    },
+    {
+      "cycle": 16,
+      "time": "2026-02-22T11:57:24.470Z",
+      "event": "Feishu WSClient connecting"
+    },
+    {
+      "cycle": 17,
+      "time": "2026-02-22T12:04:13.263Z",
+      "event": "Woke up for cycle 17"
+    },
+    {
+      "cycle": 18,
+      "time": "2026-02-22T12:04:28.937Z",
+      "event": "Woke up for cycle 18"
+    },
+    {
+      "cycle": 18,
+      "time": "2026-02-22T12:04:53.281Z",
+      "event": "Feishu WSClient connecting"
+    },
+    {
+      "cycle": 19,
+      "time": "2026-02-22T12:04:59.987Z",
+      "event": "Woke up for cycle 19"
+    },
+    {
+      "cycle": 20,
+      "time": "2026-02-22T12:05:20.082Z",
+      "event": "Woke up for cycle 20"
+    },
+    {
+      "cycle": 21,
+      "time": "2026-02-22T12:05:56.797Z",
+      "event": "Woke up for cycle 21"
+    },
+    {
+      "cycle": 22,
+      "time": "2026-02-22T12:06:16.739Z",
+      "event": "Woke up for cycle 22"
+    },
+    {
+      "cycle": 22,
+      "time": "2026-02-22T12:09:26.029Z",
+      "event": "Feishu WSClient connecting"
+    },
+    {
+      "cycle": 23,
+      "time": "2026-02-22T12:09:52.617Z",
+      "event": "Woke up for cycle 23"
+    },
+    {
+      "cycle": 24,
+      "time": "2026-02-22T12:10:08.347Z",
+      "event": "Woke up for cycle 24"
+    },
+    {
+      "cycle": 25,
+      "time": "2026-02-22T12:10:23.695Z",
+      "event": "Woke up for cycle 25"
+    },
+    {
+      "cycle": 26,
+      "time": "2026-02-22T12:10:26.725Z",
+      "event": "Woke up for cycle 26"
+    },
+    {
+      "cycle": 27,
+      "time": "2026-02-22T12:10:49.846Z",
+      "event": "Woke up for cycle 27"
+    },
+    {
+      "cycle": 28,
+      "time": "2026-02-22T12:11:07.659Z",
+      "event": "Woke up for cycle 28"
+    },
+    {
+      "cycle": 29,
+      "time": "2026-02-22T12:11:21.010Z",
+      "event": "Woke up for cycle 29"
+    },
+    {
+      "cycle": 30,
+      "time": "2026-02-22T12:16:12.189Z",
+      "event": "Woke up for cycle 30"
+    },
+    {
+      "cycle": 30,
+      "time": "2026-02-22T12:17:29.934Z",
+      "event": "Feishu WSClient connecting"
+    },
+    {
+      "cycle": 31,
+      "time": "2026-02-22T12:18:01.980Z",
+      "event": "Woke up for cycle 31"
+    },
+    {
+      "cycle": 32,
+      "time": "2026-02-22T12:18:20.794Z",
+      "event": "Woke up for cycle 32"
+    },
+    {
+      "cycle": 33,
+      "time": "2026-02-22T12:19:02.446Z",
+      "event": "Woke up for cycle 33"
+    },
+    {
+      "cycle": 34,
+      "time": "2026-02-22T12:21:10.841Z",
+      "event": "Woke up for cycle 34"
+    },
+    {
+      "cycle": 35,
+      "time": "2026-02-22T12:21:30.057Z",
+      "event": "Woke up for cycle 35"
+    },
+    {
+      "cycle": 36,
+      "time": "2026-02-22T12:25:32.905Z",
+      "event": "Woke up for cycle 36"
+    },
+    {
+      "cycle": 37,
+      "time": "2026-02-22T12:26:34.628Z",
+      "event": "Woke up for cycle 37"
+    },
+    {
+      "cycle": 37,
+      "time": "2026-02-22T12:29:44.614Z",
+      "event": "Feishu WSClient connecting"
+    },
+    {
+      "cycle": 38,
+      "time": "2026-02-22T12:30:32.898Z",
+      "event": "Woke up for cycle 38"
+    },
+    {
+      "cycle": 39,
+      "time": "2026-02-22T12:30:51.238Z",
+      "event": "Woke up for cycle 39"
+    },
+    {
+      "cycle": 40,
+      "time": "2026-02-22T12:35:56.045Z",
+      "event": "Woke up for cycle 40"
+    }
+  ],
+  "lessons": [
+    {
+      "cycle": 10,
+      "time": "2026-02-22T11:13:37.583Z",
+      "lesson": "Reached cycle 10 milestone"
+    },
+    {
+      "cycle": 20,
+      "time": "2026-02-22T12:05:21.094Z",
+      "lesson": "Reached cycle 20 milestone"
+    },
+    {
+      "cycle": 30,
+      "time": "2026-02-22T12:16:14.239Z",
+      "lesson": "Reached cycle 30 milestone"
+    },
+    {
+      "cycle": 40,
+      "time": "2026-02-22T12:35:57.031Z",
+      "lesson": "Reached cycle 40 milestone"
+    }
+  ],
+  "goals": {
+    "short": [],
+    "mid": [],
+    "long": []
+  },
+  "evolutionLog": [
+    {
+      "cycle": 1,
+      "time": "2026-02-22T10:21:51.498Z",
+      "action": "Cycle 1 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 2,
+      "time": "2026-02-22T10:22:09.601Z",
+      "action": "Cycle 2 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 3,
+      "time": "2026-02-22T10:23:48.686Z",
+      "action": "Cycle 3 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 4,
+      "time": "2026-02-22T10:24:07.094Z",
+      "action": "Cycle 4 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 5,
+      "time": "2026-02-22T10:34:22.216Z",
+      "action": "Cycle 5 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 6,
+      "time": "2026-02-22T10:34:41.541Z",
+      "action": "Cycle 6 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 7,
+      "time": "2026-02-22T10:39:46.656Z",
+      "action": "Cycle 7 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 8,
+      "time": "2026-02-22T11:12:42.747Z",
+      "action": "Cycle 8 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 9,
+      "time": "2026-02-22T11:12:59.962Z",
+      "action": "Cycle 9 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 10,
+      "time": "2026-02-22T11:13:37.583Z",
+      "action": "Cycle 10 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 11,
+      "time": "2026-02-22T11:13:57.479Z",
+      "action": "Cycle 11 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 12,
+      "time": "2026-02-22T11:19:08.484Z",
+      "action": "Cycle 12 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 13,
+      "time": "2026-02-22T11:20:09.172Z",
+      "action": "Cycle 13 complete",
+      "result": "[\"trigger\",\"llmResponse\",\"toolResults\"]"
+    },
+    {
+      "cycle": 14,
+      "time": "2026-02-22T11:20:27.883Z",
+      "action": "Cycle 14 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 15,
+      "time": "2026-02-22T11:25:32.616Z",
+      "action": "Cycle 15 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 16,
+      "time": "2026-02-22T11:39:53.278Z",
+      "action": "Cycle 16 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 17,
+      "time": "2026-02-22T12:04:19.187Z",
+      "action": "Cycle 17 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 18,
+      "time": "2026-02-22T12:04:33.575Z",
+      "action": "Cycle 18 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 19,
+      "time": "2026-02-22T12:05:01.238Z",
+      "action": "Cycle 19 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 20,
+      "time": "2026-02-22T12:05:21.094Z",
+      "action": "Cycle 20 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 21,
+      "time": "2026-02-22T12:05:57.658Z",
+      "action": "Cycle 21 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 22,
+      "time": "2026-02-22T12:06:18.015Z",
+      "action": "Cycle 22 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 23,
+      "time": "2026-02-22T12:09:54.029Z",
+      "action": "Cycle 23 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 24,
+      "time": "2026-02-22T12:10:09.915Z",
+      "action": "Cycle 24 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 25,
+      "time": "2026-02-22T12:10:25.150Z",
+      "action": "Cycle 25 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 26,
+      "time": "2026-02-22T12:10:27.725Z",
+      "action": "Cycle 26 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 27,
+      "time": "2026-02-22T12:10:51.893Z",
+      "action": "Cycle 27 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 28,
+      "time": "2026-02-22T12:11:09.383Z",
+      "action": "Cycle 28 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 29,
+      "time": "2026-02-22T12:11:22.246Z",
+      "action": "Cycle 29 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 30,
+      "time": "2026-02-22T12:16:14.239Z",
+      "action": "Cycle 30 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 31,
+      "time": "2026-02-22T12:18:03.097Z",
+      "action": "Cycle 31 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 32,
+      "time": "2026-02-22T12:18:21.723Z",
+      "action": "Cycle 32 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 33,
+      "time": "2026-02-22T12:19:03.747Z",
+      "action": "Cycle 33 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 34,
+      "time": "2026-02-22T12:21:16.834Z",
+      "action": "Cycle 34 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 35,
+      "time": "2026-02-22T12:21:30.997Z",
+      "action": "Cycle 35 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 36,
+      "time": "2026-02-22T12:25:35.154Z",
+      "action": "Cycle 36 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 37,
+      "time": "2026-02-22T12:26:36.483Z",
+      "action": "Cycle 37 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 38,
+      "time": "2026-02-22T12:30:34.203Z",
+      "action": "Cycle 38 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 39,
+      "time": "2026-02-22T12:30:52.177Z",
+      "action": "Cycle 39 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    },
+    {
+      "cycle": 40,
+      "time": "2026-02-22T12:35:57.031Z",
+      "action": "Cycle 40 complete",
+      "result": "[\"trigger\",\"llmResponse\"]"
+    }
+  ]
+}

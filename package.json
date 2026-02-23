@@ -1,0 +1,43 @@
+{
+    "name": "fishbig-agent",
+    "version": "0.1.0",
+    "type": "module",
+    "description": "FishbigAgent — An autonomous AI agent with Soul, Constitution, Life Cycle, and Feishu integration.",
+    "main": "dist/index.js",
+    "scripts": {
+        "start": "node dist/index.js",
+        "dev": "node --loader ts-node/esm src/index.ts",
+        "login": "node --loader ts-node/esm src/auth/login.ts",
+        "memory:cleanup": "node --loader ts-node/esm src/scripts/memory-cleanup.ts",
+        "build": "tsc",
+        "watch": "ts-node-dev --respawn src/index.ts",
+        "pm2:start": "pm2 start ecosystem.config.cjs",
+        "pm2:stop": "pm2 stop fishbig",
+        "pm2:logs": "pm2 logs fishbig",
+        "pm2:restart": "pm2 restart fishbig"
+    },
+    "dependencies": {
+        "@larksuiteoapi/node-sdk": "^1.59.0",
+        "node-cron": "^3.0.3",
+        "playwright": "^1.58.2",
+        "playwright-extra": "^4.3.6",
+        "puppeteer-extra-plugin-stealth": "^2.11.2",
+        "ws": "^8.18.0"
+    },
+    "devDependencies": {
+        "@types/node": "^22.0.0",
+        "@types/node-cron": "^3.0.11",
+        "@types/ws": "^8.5.12",
+        "ts-node": "^10.9.2",
+        "ts-node-dev": "^2.0.0",
+        "typescript": "^5.7.2"
+    },
+    "keywords": [
+        "agent",
+        "ai",
+        "autonomous",
+        "genesis",
+        "feishu"
+    ],
+    "license": "MIT"
+}

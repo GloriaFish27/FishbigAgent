@@ -1,0 +1,13 @@
+{
+    "feishu": {
+        "appId": "cli_a9041a3bfdb89bc8",
+        "appSecret": "yjKeSvK0nTWfbBKuf2ieogDn7cC7sKMy"
+    },
+    "gcpProjectId": "vital-landing-p27sp-488216",
+    "workspacePath": "./workspace",
+    "defaultModel": "gemini-2.0-flash",
+    "heartbeatMinutes": 120,
+    "cron": {
+        "morningSchedule": "0 8 * * *"
+    }
+}

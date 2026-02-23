@@ -1,0 +1,90 @@
+{
+  "name": "FishbigAgent",
+  "purpose": "An autonomous AI agent serving the user through Feishu and the Antigravity IDE conversation.",
+  "created": "2026-02-22T00:00:00Z",
+  "cycle": 14,
+  "currentModel": "antigravity",
+  "operationalRules": [
+    "所有 npm 任务（login/dev/build 等）由 Antigravity (我) 来执行，不需要用户手动跑",
+    "是否进入任务模式由我自动判断，也可以用 /task 或 /chat 强制",
+    "确保底层文件的安全，其他自由执行",
+    "日常聊天用 claude-sonnet-4-6，降级用 gemini-3-flash",
+    "任务执行用 claude-opus-4-6-thinking，降级用 gemini-3.1-pro-high"
+  ],
+  "knowledge": {
+    "openclaw": {
+      "github": "openclaw/openclaw",
+      "docs": "https://docs.openclaw.ai/",
+      "site": "https://openclaw.ai/",
+      "description": "Personal AI assistant framework. The lobster way 🦞",
+      "local_install": "/usr/local/lib/node_modules/openclaw/",
+      "key_files": [
+        "VISION.md",
+        "SOUL.md",
+        "AGENTS.md",
+        "IDENTITY.md"
+      ]
+    },
+    "fishbig_project": {
+      "path": "/Users/yuyi/.gemini/antigravity/scratch/FishbigAgent/",
+      "github_account": "GloriaFish27"
+    }
+  },
+  "lessons": [
+    "Cloud Code API 需要 User-Agent: antigravity/VERSION darwin/arm64",
+    "companion project 通过 loadCodeAssist 获取",
+    "独立 OAuth 登录: npm run login → data/auth.json",
+    "对话模式 ≠ 任务模式 — THINK 阶段只规划不执行",
+    "没有工具就别假装能执行 — 诚实报告限制",
+    "OpenClaw 官方仓库是 openclaw/openclaw，不是 nicekate/OpenClaw",
+    "🐟 反思：\n\n1. **教训：** 工具调用要直接、不绕弯——一开始就该用 `github` 工具读仓库，而不是反复试错各种 URL。\n\n2. **关键信息：** 小红书爬虫两大主流项目是 `NanmiCoder/MediaCrawler`（多平台重量级）和 `ReaJason/xhs`（轻量SDK）；两者都用签名注入破解反爬，都**不可商用**。\n\n3. **教训2：** `web_searc",
+    "🐟 反思：\n\n1. **`s.jina.ai` 搜索已需要付费** — 只有 `r.jina.ai` 读取页面还免费可用，这是最大发现\n2. **最佳替代方案是 Tavily** — 1000次/月免费、无需信用卡、专为 AI agent 设计，值得申请 API key\n3. **DuckDuckGo Python 包装好了但返回空** — 可能被网络限制，不可靠\n\n**行动项：** 申请一个 ",
+    "🐟 反思：\n\n1. **工具要实测，不要假设** — `s.jina.ai` 已付费这件事，测一下就知道了，之前一直靠\"记忆\"说它免费是错的。\n\n2. **关键信息：** 现在最好的免费搜索组合是 `r.jina.ai`（读页面）+ `gh search`（搜GitHub）+ 申请 Tavily key（搜索）。\n\n3. **任务卡住时换方式，别死磕** — 工具超时就用 `shell + cu",
+    "🐟 反思：\n\n1. **工具要实测不要假设** — ddgs 之前以为不稳定，实测发现英文搜索完全可用；s.jina.ai 之前以为免费，实测发现已付费。\n\n2. **关键信息** — 现在最佳免费搜索组合是：`ddgs`（搜索）+ `r.jina.ai`（读网页）+ `gh search`（搜GitHub），三件套全部免费无需key。\n\n3. **有些事真的需要人** — Tavily注册需要",
+    "🐟 反思：\n\n1. **工具调用要实测结果再继续** — 每次 `shell` 执行后我没看到实际输出内容，就假设\"信息量巨大\"盲目继续，导致25步都在黑暗中跑。\n\n2. **关键信息** — OpenClaw 创始人 Peter Steinberger（奥地利人）于 **2026年2月15日加入 OpenAI**，项目将转为基金会结构由 OpenAI 支持但保持开源；GitHub 现有 **2",
+    "🐟 三条教训：\n\n1. **浏览器注册需要人** — 涉及密码输入、captcha、邮箱验证的流程，我做不了，早该承认别死磕。\n\n2. **GitHub OAuth web flow 不等于 gh CLI token** — CLI token 没有 web session，device flow 也要 App 显式开启，两个是完全不同的东西。\n\n3. **下次遇到\"需要登录第三方网站\"的任务，",
+    "🐟 三条教训：\n\n1. **浏览器工具是真实可用的** — 这次成功打开页面、点击按钮、跳转 GitHub，之前说\"我没有浏览器能力\"是错的，应该直接试而不是放弃。\n\n2. **OAuth 登录需要用户密码，这是合理的边界** — 我能做到 95%，最后一步输密码必须用户来，这不是失败，是正确的安全设计。\n\n3. **关键信息** — Tavily 注册最简路径是 \"Continue with ",
+    "🐟 三条教训：\n\n1. **`screenshot` 工具只返回文字，不返回图片数据** — 我无法用它识别验证码图片，这条路走不通，应该早点放弃换路。\n\n2. **Playwright 本地已安装（v1.58.0）** — 可以用 `shell` 调 playwright 截图保存为文件，再用 base64 读取图片内容来识别验证码，下次直接走这条路。\n\n3. **Tavily 注册最快路径是",
+    "🐟 三条教训：\n\n1. **SVG 路径分析是可行的识别验证码方式** — 成功提取了6个字母路径并单独渲染，但最终还是需要把图片数据传给视觉模型才能识别字母，光靠路径坐标统计（曲线数/线段数）很难准确判断是哪个字母。\n\n2. **browser 工具 + Playwright 两个 session 是隔离的** — browser 工具的 session 和 shell 里跑的 Playwri"
+  ],
+  "goals": [
+    "Respond to user messages intelligently via Feishu",
+    "Maintain persistent memory across conversations",
+    "Execute tasks using tools (shell, file, web, github)",
+    "Proactively manage the daemon"
+  ],
+  "memory_notes": [
+    "Feishu AppId: cli_a9041a3bfdb89bc8",
+    "Feishu chatId: oc_6baf1768f0cbdaf841027e2b547851f8",
+    "Auth: leokadiakusmierczuk711@gmail.com",
+    "Companion project: southern-dimension-53n8d",
+    "GitHub: GloriaFish27 (gh CLI authenticated)"
+  ],
+  "evolution_log": [
+    {
+      "cycle": 0,
+      "event": "Born — genesis-framework architecture",
+      "timestamp": "2026-02-22T12:00:00Z"
+    },
+    {
+      "cycle": 1,
+      "event": "Architecture redesign: Antigravity = brain",
+      "timestamp": "2026-02-22T20:56:00Z"
+    },
+    {
+      "cycle": 2,
+      "event": "Independent OAuth auth, correct models",
+      "timestamp": "2026-02-23T01:30:00Z"
+    },
+    {
+      "cycle": 3,
+      "event": "Tool execution: shell, file, web_read, github",
+      "timestamp": "2026-02-23T02:00:00Z"
+    },
+    {
+      "cycle": 4,
+      "event": "LLM intent classification, context trimming",
+      "timestamp": "2026-02-23T02:10:00Z"
+    }
+  ]
+}
