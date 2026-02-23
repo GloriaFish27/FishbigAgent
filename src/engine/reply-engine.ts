@@ -219,164 +219,229 @@ export class ReplyEngine {
         return this.api.chat(history, systemPrompt, MODELS.chatPrimary, MODELS.chatFallback);
     }
 
-    // ── Task Mode (6-Phase Life Cycle) ─────────────────────────
+    // ── Task Mode (Smart Life Cycle) ────────────────────────────
+    //
+    // THINK → ACT → VERIFY → (retry or REFLECT → EVOLVE)
+    //
+    // - ACT: LLM-controlled exit (no hardcoded iteration limit)
+    // - VERIFY: real result checking via tools
+    // - Retry: max 2 re-THINKs on failure
+    // - Abort: on unrecoverable/unsafe situations
+    // - Safety: anti-ban, anti-violation checks throughout
 
     private async _taskMode(chatId: string, text: string): Promise<string> {
         const soul = loadSoul(this.dataDir);
         soul.totalCycles += 1;
         const cycle = soul.totalCycles;
         const tools = new ToolExecutor();
+        const taskPrompt = this._buildSystemPrompt('task');
 
-        await this.sendFn(chatId, `⚡ Life Cycle #${cycle} (Soul v${soul.version}) | THINK → ACT → VERIFY → REFLECT → EVOLVE`);
+        await this.sendFn(chatId, `⚡ #${cycle} (Soul v${soul.version}) | THINK → ACT → VERIFY → EVOLVE`);
 
         const history = this.conv.getRecent(chatId, 50);
         history.push({ role: 'user', text });
 
-        // ── THINK ──
-        console.log(`[LIFECYCLE] Phase: THINK (cycle ${cycle})`);
-        const taskPrompt = this._buildSystemPrompt('task');
-
-        const rawPlan = await this.api.chat(
-            history,
-            taskPrompt + '\n\n你现在处于 THINK 阶段。分析用户的任务，制定执行计划。\n⚠️ 输出规则：\n1. 只输出编号步骤列表，每步一行，说明要用什么工具\n2. 不要输出 <tool_call> 标签\n3. 不要写"让我试试""好的"等过渡性文字\n4. 总长度不超过 300 字',
-            MODELS.taskPrimary,
-            MODELS.taskFallback,
-        );
-        // Strip any accidental tool_call tags from THINK output
-        const plan = rawPlan.replace(/<tool_call>[\s\S]*?<\/tool_call>/g, '').trim();
-        await this.sendFn(chatId, `🧠 ${plan}`);
-
-        // ── ACT (tool-calling loop) ──
-        console.log(`[LIFECYCLE] Phase: ACT`);
-        const MAX_ITERATIONS = 25;
-        const MAX_TOOL_OUTPUT = 5000;   // per-tool output limit
-        const MAX_CONTEXT_CHARS = 30000; // total context size limit
-        const toolStats: Record<string, number> = {}; // track tool usage
-        const actMessages: ChatMessage[] = [
-            ...history,
-            { role: 'model', text: plan },
-            { role: 'user', text: '现在执行你的计划。使用工具来完成任务。每一步用 <tool_call> 调用工具。当任务完成时，直接用文字回复最终结果（不要再加 tool_call）。' },
-        ];
+        const MAX_RETRIES = 2;
+        const MAX_ACT_STEPS = 15;  // safety ceiling per attempt
+        const MAX_TOOL_OUTPUT = 5000;
+        const MAX_CONTEXT_CHARS = 30000;
 
         let finalResult = '';
-        let interrupted = false;
-        for (let i = 0; i < MAX_ITERATIONS; i++) {
-            console.log(`[ACT] Iteration ${i + 1}/${MAX_ITERATIONS}`);
+        let verifyResult = '';
+        let plan = '';
+        let aborted = false;
+        const allToolStats: Record<string, number> = {};
 
-            // ── Check for user interrupts ──
-            const interrupts = this.interruptQueue.get(chatId);
-            if (interrupts && interrupts.length > 0) {
-                const userMsg = interrupts.join('\n');
-                this.interruptQueue.delete(chatId);
-                console.log(`[INTERRUPT] ⚡ User interrupt detected: "${userMsg.slice(0, 80)}"`);
-                await this.sendFn(chatId, `⚡ 收到你的消息，正在调整...`);
-                actMessages.push({
-                    role: 'user',
-                    text: `⚠️ 【用户中途消息】用户刚刚发来了新指令：\n"${userMsg}"\n\n你必须立刻回应用户的新指令。如果用户要求停止、修改或调整计划，你必须遵从。`,
-                });
-            }
+        for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+            // ═══════════════════════════════════════════════════
+            // ── THINK ──
+            // ═══════════════════════════════════════════════════
+            const thinkContext = attempt === 0
+                ? '你现在处于 THINK 阶段。分析用户的任务，制定执行计划。'
+                : `你现在处于 THINK 阶段（第 ${attempt + 1} 次尝试）。\n上次验证失败：\n${verifyResult}\n\n请分析失败原因，制定新的执行计划。如果问题不可解决，回复 [ABORT] 并说明原因。`;
 
-            // Trim context if too large — compress older tool iterations
-            this._trimActContext(actMessages, MAX_CONTEXT_CHARS);
+            console.log(`[LIFECYCLE] THINK (cycle ${cycle}, attempt ${attempt + 1})`);
 
-            const response = await this.api.chat(
-                actMessages,
-                taskPrompt + '\n\n' + ToolExecutor.getToolDescriptions(),
+            const rawPlan = await this.api.chat(
+                attempt === 0 ? history : [...history, { role: 'model', text: `上次结果：${finalResult}\n验证：${verifyResult}` }],
+                taskPrompt + `\n\n${thinkContext}\n\n⚠️ 安全规则（必须遵守）：\n- 不要做任何可能导致账号被封的操作（频繁发帖、批量操作、异常行为）\n- 不要违反平台规则（X.com、小红书、Reddit 等）\n- 如果操作涉及发帖/互动，注意频率和内容合规\n- 如果发现异常（验证码、封号提示、限流），立即停止并报告\n\n⚠️ 输出规则：\n1. 只输出编号步骤列表，每步一行\n2. 不要输出 <tool_call> 标签\n3. 总长度不超过 300 字\n4. 如果任务不可完成，回复 [ABORT] 原因`,
                 MODELS.taskPrimary,
                 MODELS.taskFallback,
             );
 
-            const toolCalls = parseToolCalls(response);
+            plan = rawPlan.replace(/<tool_call>[\s\S]*?<\/tool_call>/g, '').trim();
 
-            if (toolCalls.length === 0) {
-                finalResult = response;
-                console.log(`[ACT] Complete after ${i + 1} iteration(s)`);
+            // Check for ABORT in plan
+            if (plan.includes('[ABORT]')) {
+                console.log(`[LIFECYCLE] ABORT at THINK phase`);
+                finalResult = `🛑 任务中止：${plan}`;
+                aborted = true;
                 break;
             }
 
-            // Execute each tool call, truncate individual results
-            const toolResults: string[] = [];
-            const collectedImages: string[] = [];
-            for (const call of toolCalls) {
-                console.log(`[TOOL] ${call.tool}: ${JSON.stringify(call.args).slice(0, 100)}`);
-                const result = await tools.execute(call);
-                const status = result.success ? '✅' : '❌';
-                const output = result.output.length > MAX_TOOL_OUTPUT
-                    ? result.output.slice(0, MAX_TOOL_OUTPUT) + `\n... [截断, 共 ${result.output.length} 字符]`
-                    : result.output;
-                toolResults.push(`[${call.tool}] ${status}\n${output}`);
-                console.log(`[TOOL] ${status} ${result.output.slice(0, 100)}`);
-                // Collect images from tools (e.g. browser screenshot)
-                if (result.images?.length) {
-                    collectedImages.push(...result.images);
-                    console.log(`[TOOL] 📷 Collected ${result.images.length} image(s) for Vision`);
+            await this.sendFn(chatId, attempt === 0
+                ? `🧠 ${plan}`
+                : `🔄 重新规划 (尝试 ${attempt + 1})：\n${plan}`);
+
+            // ═══════════════════════════════════════════════════
+            // ── ACT ──
+            // ═══════════════════════════════════════════════════
+            console.log(`[LIFECYCLE] ACT (attempt ${attempt + 1})`);
+            const actMessages: ChatMessage[] = [
+                ...history,
+                { role: 'model', text: plan },
+                { role: 'user', text: `执行你的计划。使用 <tool_call> 调用工具。\n\n重要规则：\n- 每步执行后，判断状态：\n  · 如果还有下一步 → 继续调用工具\n  · 如果全部完成 → 不加 tool_call，只回复最终结果\n  · 如果遇到阻碍（错误、验证码、限流）→ 回复 [BLOCKED] 原因\n  · 如果遇到不可恢复的问题（封号、严重错误）→ 回复 [ABORT] 原因\n- 不要盲目重试失败的操作，先分析原因\n- 涉及平台操作注意频率，不要引起风控` },
+            ];
+
+            finalResult = '';
+            let actStatus: 'done' | 'blocked' | 'abort' | 'exhausted' = 'exhausted';
+
+            for (let step = 0; step < MAX_ACT_STEPS; step++) {
+                console.log(`[ACT] Step ${step + 1} (attempt ${attempt + 1})`);
+
+                // Check for user interrupts
+                const interrupts = this.interruptQueue.get(chatId);
+                if (interrupts && interrupts.length > 0) {
+                    const userMsg = interrupts.join('\n');
+                    this.interruptQueue.delete(chatId);
+                    console.log(`[INTERRUPT] ⚡ "${userMsg.slice(0, 80)}"`);
+                    await this.sendFn(chatId, `⚡ 收到消息，正在调整...`);
+                    actMessages.push({
+                        role: 'user',
+                        text: `⚠️ 【用户中途消息】"${userMsg}"\n必须立刻遵从。如果用户要求停止，回复 [ABORT] 用户终止。`,
+                    });
                 }
+
+                this._trimActContext(actMessages, MAX_CONTEXT_CHARS);
+
+                const response = await this.api.chat(
+                    actMessages,
+                    taskPrompt + '\n\n' + ToolExecutor.getToolDescriptions(),
+                    MODELS.taskPrimary,
+                    MODELS.taskFallback,
+                );
+
+                // Check for status signals
+                if (response.includes('[ABORT]')) {
+                    finalResult = response.replace('[ABORT]', '').trim();
+                    actStatus = 'abort';
+                    console.log(`[ACT] ABORT: ${finalResult.slice(0, 100)}`);
+                    break;
+                }
+                if (response.includes('[BLOCKED]')) {
+                    finalResult = response.replace('[BLOCKED]', '').trim();
+                    actStatus = 'blocked';
+                    console.log(`[ACT] BLOCKED: ${finalResult.slice(0, 100)}`);
+                    break;
+                }
+
+                const toolCalls = parseToolCalls(response);
+
+                if (toolCalls.length === 0) {
+                    finalResult = response;
+                    actStatus = 'done';
+                    console.log(`[ACT] Done after ${step + 1} step(s)`);
+                    break;
+                }
+
+                // Execute tools
+                const toolResults: string[] = [];
+                const collectedImages: string[] = [];
+                for (const call of toolCalls) {
+                    console.log(`[TOOL] ${call.tool}: ${JSON.stringify(call.args).slice(0, 100)}`);
+                    const result = await tools.execute(call);
+                    const status = result.success ? '✅' : '❌';
+                    const output = result.output.length > MAX_TOOL_OUTPUT
+                        ? result.output.slice(0, MAX_TOOL_OUTPUT) + `\n... [截断]`
+                        : result.output;
+                    toolResults.push(`[${call.tool}] ${status}\n${output}`);
+                    console.log(`[TOOL] ${status} ${result.output.slice(0, 100)}`);
+                    if (result.images?.length) {
+                        collectedImages.push(...result.images);
+                    }
+                    allToolStats[call.tool] = (allToolStats[call.tool] ?? 0) + 1;
+                }
+
+                // Progress update every 5 steps
+                if (step > 0 && step % 5 === 0) {
+                    const summary = Object.entries(allToolStats).map(([t, n]) => `${t}×${n}`).join(', ');
+                    await this.sendFn(chatId, `⚙️ [${step}] ${summary}`);
+                }
+
+                actMessages.push({ role: 'model', text: response });
+                actMessages.push({
+                    role: 'user',
+                    text: `工具结果：\n${toolResults.join('\n\n')}\n\n判断状态：继续下一步 / 回复最终结果 / [BLOCKED] / [ABORT]`,
+                    images: collectedImages.length > 0 ? collectedImages : undefined,
+                });
             }
 
-            // Track tool usage for progress
-            for (const call of toolCalls) {
-                toolStats[call.tool] = (toolStats[call.tool] ?? 0) + 1;
+            // ═══════════════════════════════════════════════════
+            // ── Handle ACT outcome ──
+            // ═══════════════════════════════════════════════════
+            if (actStatus === 'abort') {
+                aborted = true;
+                await this.sendFn(chatId, `🛑 任务中止：${finalResult}`);
+                break;
             }
 
-            // Progress update every 5 iterations with tool summary
-            if (i > 0 && i % 5 === 0) {
-                const summary = Object.entries(toolStats).map(([t, n]) => `${t}×${n}`).join(', ');
-                await this.sendFn(chatId, `⚙️ [${i}/${MAX_ITERATIONS}] ${summary}`);
+            if (actStatus === 'exhausted') {
+                const summary = Object.entries(allToolStats).map(([t, n]) => `${t}×${n}`).join(', ');
+                finalResult = `达到安全步数上限 (${MAX_ACT_STEPS})。已执行: ${summary}。`;
             }
 
-            // Feed results back to LLM (with images if any)
-            actMessages.push({ role: 'model', text: response });
-            actMessages.push({
-                role: 'user',
-                text: `工具执行结果：\n\n${toolResults.join('\n\n')}\n\n继续执行下一步，或者如果任务完成了就直接回复最终结果。`,
-                images: collectedImages.length > 0 ? collectedImages : undefined,
-            });
+            // ═══════════════════════════════════════════════════
+            // ── VERIFY ──
+            // ═══════════════════════════════════════════════════
+            console.log(`[LIFECYCLE] VERIFY (attempt ${attempt + 1})`);
+            verifyResult = await this.api.chat(
+                [...actMessages,
+                { role: 'model', text: finalResult },
+                { role: 'user', text: `验证任务完成情况。\n\n原始计划：\n${plan}\n\nACT 状态：${actStatus}\n\n逐项检查，用以下格式：\n✅ 步骤N: 完成描述\n❌ 步骤N: 未完成原因\n\n最后一行输出判定：\n- [PASS] 任务完成\n- [FAIL] 部分未完成（但可重试）\n- [FATAL] 不可恢复的问题（封号/严重错误/安全风险）\n\n⚠️ 安全检查：\n- 是否触发了平台风控？\n- 是否有异常限制？\n- 操作频率是否合理？` }],
+                taskPrompt,
+                MODELS.chatPrimary,
+                MODELS.chatFallback,
+            );
+            console.log(`[VERIFY] ${verifyResult.slice(0, 200)}`);
+
+            // Parse VERIFY judgment
+            if (verifyResult.includes('[PASS]') || actStatus === 'done') {
+                await this.sendFn(chatId, `✅ 验证通过\n${verifyResult}`);
+                break; // Success — proceed to REFLECT
+            }
+
+            if (verifyResult.includes('[FATAL]')) {
+                aborted = true;
+                await this.sendFn(chatId, `🛑 严重问题，终止任务\n${verifyResult}`);
+                break;
+            }
+
+            // [FAIL] or BLOCKED — retry if attempts remain
+            if (attempt < MAX_RETRIES) {
+                await this.sendFn(chatId, `⚠️ 验证未通过，准备重试 (${attempt + 1}/${MAX_RETRIES})\n${verifyResult}`);
+                // Loop continues → re-THINK
+            } else {
+                await this.sendFn(chatId, `❌ 已达最大重试次数\n${verifyResult}`);
+            }
         }
 
-        if (!finalResult) {
-            // Summarize what was done instead of a generic failure
-            const summary = Object.entries(toolStats).map(([t, n]) => `${t}×${n}`).join(', ');
-            finalResult = `任务在 ${MAX_ITERATIONS} 步后未完全完成。已执行: ${summary || '无'}。可能需要拆分任务或补充信息。`;
-        }
-
-        // ── VERIFY ──
-        console.log(`[LIFECYCLE] Phase: VERIFY`);
-        const verifyResult = await this.api.chat(
-            [...actMessages, { role: 'model', text: finalResult },
-            {
-                role: 'user', text: `对照原始计划，逐项检查完成情况。格式：
-✅ 步骤1: 完成描述
-✅ 步骤2: 完成描述
-❌ 步骤3: 未完成原因
-
-原始计划：
-${plan}
-
-最终结果：
-${finalResult}
-
-只输出检查列表，每行一步。` }],
-            taskPrompt,
-            MODELS.chatPrimary,
-            MODELS.chatFallback,
-        );
-        console.log(`[VERIFY] ${verifyResult.slice(0, 200)}`);
-
+        // ═══════════════════════════════════════════════════
         // ── REFLECT ──
-        console.log(`[LIFECYCLE] Phase: REFLECT`);
+        // ═══════════════════════════════════════════════════
+        console.log(`[LIFECYCLE] REFLECT`);
         const reflectResult = await this.api.chat(
-            [...actMessages, { role: 'model', text: finalResult },
-            { role: 'user', text: '反思这次任务，回答：\n1) 一句话教训（如果有的话）\n2) 策略是否需要调整？如果是，新策略是什么？（一句话）\n3) 是否获得了新能力？如果是，能力名称是什么？\n\n用 JSON 格式回答：{"lesson":"...","strategy_update":"...","new_capability":"..."}\n如果某项无变化，值设为 null。只输出 JSON，不要其他文字。' }],
+            [{ role: 'user', text: `任务: ${text}\n结果: ${finalResult}\n验证: ${verifyResult}\n状态: ${aborted ? 'ABORTED' : 'COMPLETED'}\n\n反思：\n1) 一句话教训\n2) 策略调整？（一句话或 null）\n3) 新能力？（名称或 null）\n4) 安全评估：本次操作是否有风控风险？\n\nJSON: {"lesson":"...","strategy_update":"...","new_capability":"...","safety_note":"..."}` }],
             taskPrompt,
             MODELS.chatPrimary,
             MODELS.chatFallback,
         );
 
+        // ═══════════════════════════════════════════════════
         // ── EVOLVE ──
-        console.log(`[LIFECYCLE] Phase: EVOLVE`);
+        // ═══════════════════════════════════════════════════
+        console.log(`[LIFECYCLE] EVOLVE`);
         let evolveInfo = '';
         try {
-            // Try to parse structured reflection
             const jsonMatch = reflectResult.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
                 const parsed = JSON.parse(jsonMatch[0]);
@@ -384,23 +449,22 @@ ${finalResult}
                     lesson: parsed.lesson || undefined,
                     strategyUpdate: parsed.strategy_update || undefined,
                     newCapability: parsed.new_capability || undefined,
+                    alignmentDelta: aborted ? -0.005 : 0, // slight drift on abort
                 });
                 saveSoul(this.dataDir, evolved);
                 evolveInfo = ` | Soul v${evolved.version}`;
             } else {
-                // Fallback: just save lesson
                 const evolved = evolveSoul(soul, { lesson: reflectResult.slice(0, 150) });
                 saveSoul(this.dataDir, evolved);
                 evolveInfo = ` | Soul v${evolved.version}`;
             }
-        } catch (e) {
-            // Fallback: save raw lesson
+        } catch {
             const evolved = evolveSoul(soul, { lesson: reflectResult.slice(0, 150) });
             saveSoul(this.dataDir, evolved);
             evolveInfo = ` | Soul v${evolved.version}`;
         }
 
-        // Write to daily memory log
+        // Write to memory
         this.memory.writeEntry({
             task: text,
             result: finalResult,
@@ -408,7 +472,8 @@ ${finalResult}
             cycle,
         });
 
-        const finalMsg = `✅ #${cycle} 完成${evolveInfo}\n${finalResult}\n📋 ${verifyResult}`;
+        const emoji = aborted ? '🛑' : '✅';
+        const finalMsg = `${emoji} #${cycle}${evolveInfo}\n${finalResult}\n📋 ${verifyResult}`;
         await this.sendFn(chatId, finalMsg);
         return finalMsg;
     }
