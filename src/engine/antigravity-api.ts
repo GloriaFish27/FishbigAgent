@@ -32,11 +32,15 @@ export const MODELS = {
     compact: 'gemini-3-flash',
 } as const;
 
+export type SpendCallback = (model: string, inputTokens: number, outputTokens: number) => void;
+
 export class AntigravityAPI {
     private auth: GoogleAuth;
+    private onSpend?: SpendCallback;
 
-    constructor(auth: GoogleAuth) {
+    constructor(auth: GoogleAuth, onSpend?: SpendCallback) {
         this.auth = auth;
+        this.onSpend = onSpend;
     }
 
     get ready(): boolean {
@@ -127,7 +131,21 @@ export class AntigravityAPI {
             lastResult = await this._post(freshToken, ENDPOINTS[0], body);
         }
 
-        return this._extractText(lastResult);
+        const text = this._extractText(lastResult);
+
+        // ── Token estimation + spend tracking ──
+        if (this.onSpend) {
+            const inputChars = messages.reduce((sum, m) => sum + m.text.length, 0) + systemPrompt.length;
+            const outputChars = text.length;
+            // Rough estimate: ~4 chars per token for mixed CJK/English
+            const inputTokens = Math.ceil(inputChars / 3);
+            const outputTokens = Math.ceil(outputChars / 3);
+            try {
+                this.onSpend(model, inputTokens, outputTokens);
+            } catch { }
+        }
+
+        return text;
     }
 
     private _post(

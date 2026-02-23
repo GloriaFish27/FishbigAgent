@@ -19,15 +19,17 @@ import { AgentDatabase } from './state/database.js';
 import { MarketIntelligenceEngine } from './engine/market-intelligence.js';
 import { checkResources, formatResourceReport } from './engine/survival.js';
 import { loadSoul } from './engine/soul.js';
+import { SpendTracker } from './engine/spend-tracker.js';
 import config from '../config/config.json' with { type: 'json' };
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const DATA_DIR = path.join(PROJECT_ROOT, 'data');
 
-// ── Database + Soul ──────────────────────────────────────────
+// ── Database + Soul + SpendTracker ──────────────────────────
 const db = new AgentDatabase(DATA_DIR);
 const soul = loadSoul(DATA_DIR);
+const spendTracker = new SpendTracker(db);
 
 // ── Moltbook API Key ─────────────────────────────────────────
 const MOLTBOOK_API_KEY = (() => {
@@ -55,6 +57,10 @@ const replyEngine = new ReplyEngine({
         // Write to outbox → Bridge picks up and sends to Feishu
         ipc.writeOutbox({ chatId, text });
     },
+    onSpend: (model, inputTokens, outputTokens) => {
+        spendTracker.recordSpend(model, inputTokens, outputTokens);
+        console.log(`[SPEND] ${model}: ${inputTokens} in / ${outputTokens} out | $${(inputTokens * 0.000001 + outputTokens * 0.000004).toFixed(6)}`);
+    },
 });
 
 // ── Market Intelligence Engine ────────────────────────────
@@ -62,7 +68,7 @@ const marketEngine = new MarketIntelligenceEngine(db, MOLTBOOK_API_KEY || undefi
 
 // ── Soul summary ──────────────────────────────────────────
 function logSoulSummary(): void {
-    console.log(`[SOUL] ${soul.name} | Purpose: ${soul.corePurpose.slice(0, 60)}`);
+    console.log(`[SOUL] ${soul.name} | Mission: ${soul.coreMission.slice(0, 60)}`);
     const status = checkResources(db);
     console.log(`[SURVIVAL] ${formatResourceReport(status).split('\n').slice(1, 3).join(' | ')}`);
 }

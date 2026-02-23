@@ -10,22 +10,13 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { AntigravityAPI, MODELS, type ChatMessage } from './antigravity-api.js';
+import { AntigravityAPI, MODELS, type ChatMessage, type SpendCallback } from './antigravity-api.js';
 import { Conversation, type MemoryEntry } from './conversation.js';
 import { ToolExecutor, parseToolCalls } from './tool-executor.js';
 import { SkillLoader, type Skill } from './skill-loader.js';
 import { MemoryManager } from './memory-manager.js';
+import { loadSoul, saveSoul, evolveSoul, type SoulModel } from './soul.js';
 import type { GoogleAuth } from '../auth/google-auth.js';
-
-interface SoulData {
-    name?: string;
-    purpose?: string;
-    cycle?: number;
-    lessons?: string[];
-    goals?: string[];
-    knowledge?: Record<string, unknown>;
-    evolution_log?: Array<{ event: string }>;
-}
 
 interface ConstitutionData {
     laws?: Array<{ id: string; text: string }>;
@@ -58,11 +49,12 @@ export class ReplyEngine {
         sendFn: SendFn;
         auth: GoogleAuth;
         debounceMs?: number;
+        onSpend?: SpendCallback;
     }) {
         this.dataDir = opts.dataDir;
         this.sendFn = opts.sendFn;
         this.debounceMs = opts.debounceMs ?? 3000;
-        this.api = new AntigravityAPI(opts.auth);
+        this.api = new AntigravityAPI(opts.auth, opts.onSpend);
         this.conv = new Conversation(opts.dataDir, this.api);
 
         // Load skills from skills/ directory
@@ -230,17 +222,18 @@ export class ReplyEngine {
     // ── Task Mode (6-Phase Life Cycle) ─────────────────────────
 
     private async _taskMode(chatId: string, text: string): Promise<string> {
-        const soul = this._loadSoul();
-        soul.cycle = (soul.cycle ?? 0) + 1;
+        const soul = loadSoul(this.dataDir);
+        soul.totalCycles += 1;
+        const cycle = soul.totalCycles;
         const tools = new ToolExecutor();
 
-        await this.sendFn(chatId, `⚡ Life Cycle #${soul.cycle} | THINK → ACT → REFLECT`);
+        await this.sendFn(chatId, `⚡ Life Cycle #${cycle} (Soul v${soul.version}) | THINK → ACT → VERIFY → REFLECT → EVOLVE`);
 
         const history = this.conv.getRecent(chatId, 50);
         history.push({ role: 'user', text });
 
         // ── THINK ──
-        console.log(`[LIFECYCLE] Phase: THINK (cycle ${soul.cycle})`);
+        console.log(`[LIFECYCLE] Phase: THINK (cycle ${cycle})`);
         const taskPrompt = this._buildSystemPrompt('task');
 
         const rawPlan = await this.api.chat(
@@ -346,11 +339,34 @@ export class ReplyEngine {
             finalResult = `任务在 ${MAX_ITERATIONS} 步后未完全完成。已执行: ${summary || '无'}。可能需要拆分任务或补充信息。`;
         }
 
+        // ── VERIFY ──
+        console.log(`[LIFECYCLE] Phase: VERIFY`);
+        const verifyResult = await this.api.chat(
+            [...actMessages, { role: 'model', text: finalResult },
+            {
+                role: 'user', text: `对照原始计划，逐项检查完成情况。格式：
+✅ 步骤1: 完成描述
+✅ 步骤2: 完成描述
+❌ 步骤3: 未完成原因
+
+原始计划：
+${plan}
+
+最终结果：
+${finalResult}
+
+只输出检查列表，每行一步。` }],
+            taskPrompt,
+            MODELS.chatPrimary,
+            MODELS.chatFallback,
+        );
+        console.log(`[VERIFY] ${verifyResult.slice(0, 200)}`);
+
         // ── REFLECT ──
         console.log(`[LIFECYCLE] Phase: REFLECT`);
         const reflectResult = await this.api.chat(
             [...actMessages, { role: 'model', text: finalResult },
-            { role: 'user', text: '反思这次任务：1) 有哪些教训？2) 有哪些关键信息需要记住？简洁回答，两三句话。' }],
+            { role: 'user', text: '反思这次任务，回答：\n1) 一句话教训（如果有的话）\n2) 策略是否需要调整？如果是，新策略是什么？（一句话）\n3) 是否获得了新能力？如果是，能力名称是什么？\n\n用 JSON 格式回答：{"lesson":"...","strategy_update":"...","new_capability":"..."}\n如果某项无变化，值设为 null。只输出 JSON，不要其他文字。' }],
             taskPrompt,
             MODELS.chatPrimary,
             MODELS.chatFallback,
@@ -358,21 +374,41 @@ export class ReplyEngine {
 
         // ── EVOLVE ──
         console.log(`[LIFECYCLE] Phase: EVOLVE`);
-        if (soul.lessons && reflectResult.length > 10) {
-            soul.lessons.push(reflectResult.slice(0, 200));
-            if (soul.lessons.length > 20) soul.lessons = soul.lessons.slice(-20);
+        let evolveInfo = '';
+        try {
+            // Try to parse structured reflection
+            const jsonMatch = reflectResult.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                const parsed = JSON.parse(jsonMatch[0]);
+                const evolved = evolveSoul(soul, {
+                    lesson: parsed.lesson || undefined,
+                    strategyUpdate: parsed.strategy_update || undefined,
+                    newCapability: parsed.new_capability || undefined,
+                });
+                saveSoul(this.dataDir, evolved);
+                evolveInfo = ` | Soul v${evolved.version}`;
+            } else {
+                // Fallback: just save lesson
+                const evolved = evolveSoul(soul, { lesson: reflectResult.slice(0, 150) });
+                saveSoul(this.dataDir, evolved);
+                evolveInfo = ` | Soul v${evolved.version}`;
+            }
+        } catch (e) {
+            // Fallback: save raw lesson
+            const evolved = evolveSoul(soul, { lesson: reflectResult.slice(0, 150) });
+            saveSoul(this.dataDir, evolved);
+            evolveInfo = ` | Soul v${evolved.version}`;
         }
-        this._saveSoul(soul);
 
-        // Write to daily memory log (local file, no size limit concern)
+        // Write to daily memory log
         this.memory.writeEntry({
             task: text,
             result: finalResult,
             reflection: reflectResult,
-            cycle: soul.cycle,
+            cycle,
         });
 
-        const finalMsg = `✅ #${soul.cycle} 完成\n${finalResult}\n📝 ${reflectResult}`;
+        const finalMsg = `✅ #${cycle} 完成${evolveInfo}\n${finalResult}\n📋 ${verifyResult}`;
         await this.sendFn(chatId, finalMsg);
         return finalMsg;
     }
@@ -417,7 +453,7 @@ export class ReplyEngine {
     // ── System Prompt Builder ──────────────────────────────────
 
     private _buildSystemPrompt(mode: 'chat' | 'task'): string {
-        const soul = this._loadSoul();
+        const soul = loadSoul(this.dataDir);
         const constitution = this._loadConstitution();
 
         const parts: string[] = [];
@@ -433,27 +469,28 @@ export class ReplyEngine {
 
         // ── Soul overrides ──
         if (!identity) {
-            parts.push(`你是 ${soul.name ?? 'FishbigAgent'} 🐟，一个自主 AI 智能体。`);
-            parts.push(`目标: ${soul.purpose ?? '帮助用户完成任务'}`, '');
+            parts.push(`你是 ${soul.name} ，一个自主 AI 智能体。`);
+            parts.push(`使命: ${soul.coreMission}`, '');
         }
 
         // ── Constitution ──
         if (constitution.laws?.length) {
             parts.push(`## Constitution (不可违反的法则)`);
-            parts.push(...constitution.laws.map(l => `- [${l.id}] ${l.text}`), '');
+            parts.push(...constitution.laws.map((l: { id: string; text: string }) => `- [${l.id}] ${l.text}`), '');
         }
 
-        // ── Knowledge from soul ──
-        if (soul.knowledge) {
-            parts.push(`## 内置知识`);
-            for (const [key, val] of Object.entries(soul.knowledge)) {
-                parts.push(`- **${key}**: ${JSON.stringify(val)}`);
-            }
-            parts.push('');
+        // ── Soul Strategy ──
+        if (soul.strategy) {
+            parts.push(`## 当前策略`, soul.strategy, '');
         }
 
-        if (soul.lessons?.length) {
-            parts.push(`## 教训 (最近 5 条)`, ...soul.lessons.slice(-5).map(l => `- ${l}`), '');
+        // ── Soul Capabilities ──
+        if (soul.capabilities.length > 0) {
+            parts.push(`## 能力清单`, ...soul.capabilities.map((c: string) => `- ${c}`), '');
+        }
+
+        if (soul.lessons.length > 0) {
+            parts.push(`## 教训 (最近 5 条)`, ...soul.lessons.slice(-5).map((l: string) => `- ${l}`), '');
         }
 
         // ── Memory: Tiered Loading (P0 + P1) ──
@@ -541,17 +578,7 @@ export class ReplyEngine {
         }
     }
 
-    // ── Soul / Constitution IO ─────────────────────────────────
-
-    private _loadSoul(): SoulData {
-        try {
-            return JSON.parse(fs.readFileSync(path.join(this.dataDir, 'soul.json'), 'utf-8')) as SoulData;
-        } catch { return { name: 'FishbigAgent', cycle: 0, lessons: [], goals: [] }; }
-    }
-
-    private _saveSoul(soul: SoulData): void {
-        fs.writeFileSync(path.join(this.dataDir, 'soul.json'), JSON.stringify(soul, null, 2));
-    }
+    // ── Constitution IO ──────────────────────────────────────────
 
     private _loadConstitution(): ConstitutionData {
         try {
