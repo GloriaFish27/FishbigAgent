@@ -1,4 +1,4 @@
-# 🐟 FishbigAgent — 生存在 Antigravity IDE 上的 AI Agent
+# 🐟 OpenFish（FishbigAgent） — 生存在 Antigravity IDE 上的 AI Agent
 
 **一个基于 [Antigravity](https://github.com/anthropics/antigravity) AI IDE 构建的自动化 Agent**，每天自动采集全球 AI/跨境电商前沿资讯，生成深度分析报告 + 内容选题库，同步推送到飞书和 Notion。
 
@@ -196,12 +196,8 @@ MIT License — 开源免费，欢迎 Fork 和 PR！
 
 ---
 
-## 🙏 鸣谢
+<img width="1080" height="1489" alt="image" src="https://github.com/user-attachments/assets/6663610a-32a0-4a0a-a89f-bbd7cf2f0e76" />
 
-- [Antigravity](https://github.com/anthropics/antigravity) — AI Coding IDE，本项目的开发和运行环境
-- [Jina Reader](https://jina.ai/reader/) — 全文内容提取
-- [飞书开放平台](https://open.feishu.cn) — 消息通道
-- [Notion API](https://developers.notion.com) — 内容管理
 
 ---
 
