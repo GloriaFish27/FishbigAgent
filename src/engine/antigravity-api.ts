@@ -28,7 +28,7 @@ export const MODELS = {
     chatPrimary: 'claude-sonnet-4-6',
     chatFallback: 'gemini-3-flash',
     taskPrimary: 'claude-opus-4-6-thinking',
-    taskFallback: 'gemini-3.1-pro-high',
+    taskFallback: 'gemini-3-flash',
     compact: 'gemini-3-flash',
 } as const;
 
